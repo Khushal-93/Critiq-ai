@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: critiq-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: critiq
+      POSTGRES_PASSWORD: critiq123
+      POSTGRES_DB: critiq_ai
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -1,0 +1,211 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReviewStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum Severity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IssueCategory {
+  SECURITY
+  PERFORMANCE
+  BUG
+  STYLE
+  BEST_PRACTICE
+  ARCHITECTURE
+  MAINTAINABILITY
+}
+
+enum RepositoryVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum AuthProvider {
+  GITHUB
+  GOOGLE
+  EMAIL
+}
+
+enum MessageRole {
+  USER
+  AI
+}
+
+enum AIModel {
+  GPT_5_5
+  CLAUDE_SONNET
+  GEMINI
+}
+
+model User {
+  id       String       @id @default(cuid())
+  name     String
+  email    String       @unique
+  avatar   String?
+  githubId String?      @unique
+  provider AuthProvider
+
+  repositories Repository[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Repository {
+  id            String               @id @default(cuid())
+  name          String
+  description   String?
+  githubUrl     String?
+  defaultBranch String               @default("main")
+  language      String?
+  visibility    RepositoryVisibility
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  reviews Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Review {
+  id String @id @default(cuid())
+
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  status ReviewStatus @default(PENDING)
+
+  overallScore         Int?
+  securityScore        Int?
+  performanceScore     Int?
+  maintainabilityScore Int?
+  readabilityScore     Int?
+  architectureScore    Int?
+
+  aiModel AIModel?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  issues Issue[]
+  report Report?
+  chat   Chat?
+
+  commitHash String?
+  branchName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([repositoryId])
+}
+
+model Issue {
+  id String @id @default(cuid())
+
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+
+  severity Severity
+  category IssueCategory
+
+  filePath String
+  line     Int
+
+  codeSnippet  String?
+  suggestedFix String?
+  explanation  String?
+  confidence   Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reviewId])
+  @@index([severity])
+  @@index([category])
+  @@index([reviewId, severity])
+}
+
+model Chat {
+  id String @id @default(cuid())
+
+  reviewId String @unique
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id String @id @default(cuid())
+
+  chatId String
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  role MessageRole
+
+  content String
+
+  model  String?
+  tokens Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+}
+
+model Report {
+  id String @id @default(cuid())
+
+  reviewId String @unique
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  summary String?
+
+  overallScore Int
+
+  criticalIssues Int @default(0)
+  highIssues     Int @default(0)
+  mediumIssues   Int @default(0)
+  lowIssues      Int @default(0)
+
+  pdfUrl      String?
+  markdownUrl String?
+  jsonUrl     String?
+
+  generatedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
