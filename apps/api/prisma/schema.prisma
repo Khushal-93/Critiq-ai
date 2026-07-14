@@ -60,17 +60,18 @@ enum AIModel {
 }
 
 model User {
-  id       String       @id @default(cuid())
-  name     String
-  email    String       @unique
-  avatar   String?
-  githubId String?      @unique
-  provider AuthProvider
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  avatar        String?
+  githubId      String?       @unique
+  provider      AuthProvider
+  accessToken   String?
 
-  repositories Repository[]
+  repositories  Repository[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Repository {
