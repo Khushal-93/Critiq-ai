@@ -3,10 +3,14 @@ import { Octokit } from '@octokit/rest';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import { ImportRepositoryDto } from './dto/import-repository.dto';
+import { GitService } from '../git/git.service';
 
 @Injectable()
 export class RepositoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gitService: GitService,
+  ) { }
 
   async getGithubRepositories(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -55,5 +59,71 @@ export class RepositoriesService {
         visibility: dto.visibility,
       },
     });
+  }
+  async getImportedRepositories(userId: string) {
+    return this.prisma.repository.findMany({
+      where: {
+        ownerId: userId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+  async deleteRepository(
+    userId: string,
+    repositoryId: string,
+  ) {
+    const repository = await this.prisma.repository.findUnique({
+      where: {
+        id: repositoryId,
+      },
+    });
+
+    if (!repository) {
+      throw new Error('Repository not found');
+    }
+
+    if (repository.ownerId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    await this.prisma.repository.delete({
+      where: {
+        id: repositoryId,
+      },
+    });
+
+    return {
+      message: 'Repository deleted successfully',
+    };
+  }
+  async cloneRepository(
+    repositoryId: string,
+    userId: string,
+  ) {
+    const repository = await this.prisma.repository.findUnique({
+      where: {
+        id: repositoryId,
+      },
+    });
+
+    if (!repository) {
+      throw new Error('Repository not found');
+    }
+
+    if (repository.ownerId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    if (!repository.githubUrl) {
+      throw new Error('Repository GitHub URL is missing');
+    }
+
+    return this.gitService.cloneRepository(
+      repository.githubUrl,
+      repository.name,
+    );
+
   }
 }
