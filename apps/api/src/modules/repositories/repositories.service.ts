@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Octokit } from '@octokit/rest';
 
 import { PrismaService } from '../../prisma/prisma.service';
+import { ImportRepositoryDto } from './dto/import-repository.dto';
 
 @Injectable()
 export class RepositoriesService {
@@ -37,5 +38,22 @@ export class RepositoriesService {
       defaultBranch: repo.default_branch,
       githubUrl: repo.html_url,
     }));
+  }
+
+  async importRepository(
+    userId: string,
+    dto: ImportRepositoryDto,
+  ) {
+    return this.prisma.repository.create({
+      data: {
+        ownerId: userId,
+        name: dto.name,
+        description: dto.description,
+        githubUrl: dto.githubUrl,
+        language: dto.language,
+        defaultBranch: dto.defaultBranch,
+        visibility: dto.visibility,
+      },
+    });
   }
 }

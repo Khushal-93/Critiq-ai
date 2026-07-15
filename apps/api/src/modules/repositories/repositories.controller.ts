@@ -1,7 +1,8 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Body, Post} from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RepositoriesService } from './repositories.service';
+import { ImportRepositoryDto } from './dto/import-repository.dto';
 
 @Controller('repositories')
 export class RepositoriesController {
@@ -16,4 +17,17 @@ export class RepositoriesController {
       req.user.userId,
     );
   }
+
+  @Post('import')
+@UseGuards(JwtAuthGuard)
+async importRepository(
+  @Req() req: any,
+  @Body() dto: ImportRepositoryDto,
+) {
+  return this.repositoriesService.importRepository(
+    req.user.userId,
+    dto,
+  );
 }
+}
+
