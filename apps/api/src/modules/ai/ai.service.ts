@@ -4,11 +4,18 @@ import { buildReviewPrompt } from './prompts/review.prompt';
 
 @Injectable()
 export class AiService {
-  private readonly ollama = new OllamaProvider();
+    private readonly ollama = new OllamaProvider();
 
-  async reviewCode(code: string, language: string) {
-  const prompt = buildReviewPrompt(code, language);
+    async reviewCode(code: string, language: string) {
+        const prompt = buildReviewPrompt(code, language);
 
-  return this.ollama.review(prompt);
-}
+        const response = await this.ollama.review(prompt);
+
+        const cleaned = response
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+
+        return JSON.parse(cleaned);
+    }
 }
