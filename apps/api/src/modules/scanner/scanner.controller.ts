@@ -9,15 +9,17 @@ export class ScannerController {
   ) {}
 
   @Get()
-  scan() {
-    const repository = path.join(
-      process.cwd(),
-      'workspace',
-      'Critiq-ai',
-    );
+scan() {
+  const repository = path.join(
+    process.cwd(),
+    'workspace',
+    'Critiq-ai',
+  );
 
-    return this.scannerService.scanDirectory(
-      repository,
-    );
-  }
+  const files = this.scannerService
+    .scanDirectory(repository)
+    .slice(0, 5);
+
+  return this.scannerService.readFiles(files);
+}
 }

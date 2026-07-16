@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RepositoriesModule } from './modules/repositories/repositories.module';
 import { GitModule } from './modules/git/git.module';
 import { ScannerModule } from './modules/scanner/scanner.module';
+import { AiModule } from './modules/ai/ai.module';
 
 
 
@@ -17,6 +18,7 @@ import { ScannerModule } from './modules/scanner/scanner.module';
     RepositoriesModule,
     GitModule,
     ScannerModule,
+    AiModule,
   ],
 })
 export class AppModule {}
