@@ -1,0 +1,23 @@
+import { Controller, Get } from '@nestjs/common';
+import { ScannerService } from './scanner.service';
+import * as path from 'path';
+
+@Controller('scanner')
+export class ScannerController {
+  constructor(
+    private readonly scannerService: ScannerService,
+  ) {}
+
+  @Get()
+  scan() {
+    const repository = path.join(
+      process.cwd(),
+      'workspace',
+      'Critiq-ai',
+    );
+
+    return this.scannerService.scanDirectory(
+      repository,
+    );
+  }
+}

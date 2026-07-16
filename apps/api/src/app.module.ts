@@ -5,6 +5,8 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RepositoriesModule } from './modules/repositories/repositories.module';
 import { GitModule } from './modules/git/git.module';
+import { ScannerModule } from './modules/scanner/scanner.module';
+
 
 
 @Module({
@@ -14,6 +16,7 @@ import { GitModule } from './modules/git/git.module';
     AuthModule,
     RepositoriesModule,
     GitModule,
+    ScannerModule,
   ],
 })
 export class AppModule {}
