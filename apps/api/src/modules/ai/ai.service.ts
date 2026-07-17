@@ -16,6 +16,9 @@ export class AiService {
             .replace(/```/g, "")
             .trim();
 
+            console.log("========== RAW AI RESPONSE ==========");
+console.log(cleaned);
+console.log("=====================================");
         return JSON.parse(cleaned);
     }
 }

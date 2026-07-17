@@ -14,51 +14,164 @@ export class ReviewsService {
     ) { }
 
     async reviewRepository(repositoryId: string) {
-  const repositoryPath = `workspace/Critiq-ai`;
 
-  console.log('1. Scanning repository...');
+        // Verify repository exists
+        const repository = await this.prisma.repository.findUnique({
+            where: {
+                id: repositoryId,
+            },
+        });
 
-  const files = this.scanner.scanDirectory(repositoryPath);
+        if (!repository) {
+            throw new Error('Repository not found');
+        }
 
-  console.log(`Found ${files.length} files`);
+        // Create review
+        const reviewRecord = await this.prisma.review.create({
+            data: {
+                repositoryId,
+                status: 'RUNNING',
+                startedAt: new Date(),
+            },
+        });
 
-  console.log('2. Reading files...');
+        console.log(`Created review: ${reviewRecord.id}`);
 
-  const contents = this.scanner.readFiles(files);
+        const repositoryPath = `workspace/Critiq-ai`;
 
-  console.log(`Read ${contents.length} files`);
+        console.log('1. Scanning repository...');
 
-  console.log('3. Chunking files...');
+        const files = this.scanner.scanDirectory(repositoryPath);
 
-  const chunks = this.scanner.chunkFiles(contents);
+        console.log(`Found ${files.length} files`);
 
-  console.log(`Created ${chunks.length} chunks`);
+        console.log('2. Reading files...');
 
-  const reviews: any[] = [];
+        const contents = this.scanner.readFiles(files);
 
-  // Review only first 3 chunks for testing
-  for (const chunk of chunks.slice(0, 3)) {
-    console.log(
-      `Reviewing ${chunk.filePath} (${chunk.chunkNumber}/${chunk.totalChunks})`,
-    );
+        console.log(`Read ${contents.length} files`);
 
-    const review = await this.ai.reviewCode(
-      chunk.content,
-      chunk.language,
-    );
+        console.log('3. Chunking files...');
 
-    console.log('Review completed');
+        const chunks = this.scanner.chunkFiles(contents);
 
-    reviews.push({
-      filePath: chunk.filePath,
-      chunkNumber: chunk.chunkNumber,
-      review,
-    });
-  }
+        console.log(`Created ${chunks.length} chunks`);
 
-  console.log('Finished reviewing!');
+        const reviews: any[] = [];
 
-  return reviews;
-}
+        // Review only first 3 chunks for testing
+        // Review only first 3 chunks for testing
+        for (const chunk of chunks.slice(0, 3)) {
+            try {
+                console.log(
+                    `Reviewing ${chunk.filePath} (${chunk.chunkNumber}/${chunk.totalChunks})`,
+                );
+
+                const review = await this.ai.reviewCode(
+                    chunk.content,
+                    chunk.language,
+                );
+
+                console.log('Review completed');
+
+                for (const issue of review.issues) {
+                    await this.prisma.issue.create({
+                        data: {
+                            reviewId: reviewRecord.id,
+
+                            title: issue.title,
+                            description: issue.description,
+
+                            severity: this.mapSeverity(issue.severity),
+                            category: this.mapCategory(issue.category),
+
+                            filePath: chunk.filePath,
+                            line: null,
+
+                            suggestedFix: issue.suggestion,
+                            explanation: review.summary,
+                            confidence: 0.9,
+                        },
+                    });
+                }
+
+                reviews.push({
+                    filePath: chunk.filePath,
+                    chunkNumber: chunk.chunkNumber,
+                    review,
+                });
+
+            } catch (error) {
+                console.error(
+                    `Failed to review ${chunk.filePath}`,
+                    error,
+                );
+
+                continue;
+            }
+        }
+
+        await this.prisma.review.update({
+    where: {
+        id: reviewRecord.id,
+    },
+    data: {
+        status: 'COMPLETED',
+        completedAt: new Date(),
+    },
+});
+
+console.log('Finished reviewing!');
+
+
+        return reviews;
+    }
+    private mapSeverity(severity: string) {
+        switch (severity.toUpperCase()) {
+            case 'INFO':
+                return 'INFO';
+            case 'LOW':
+                return 'LOW';
+            case 'MEDIUM':
+                return 'MEDIUM';
+            case 'HIGH':
+                return 'HIGH';
+            case 'CRITICAL':
+                return 'CRITICAL';
+            default:
+                return 'LOW';
+        }
+    }
+
+    private mapCategory(category: string) {
+        switch (category.toLowerCase()) {
+            case 'security':
+                return 'SECURITY';
+
+            case 'performance':
+                return 'PERFORMANCE';
+
+            case 'bug':
+                return 'BUG';
+
+            case 'code smell':
+                return 'MAINTAINABILITY';
+
+            case 'best practice violation':
+                return 'BEST_PRACTICE';
+
+            case 'architecture':
+                return 'ARCHITECTURE';
+
+            case 'maintainability':
+                return 'MAINTAINABILITY';
+
+            case 'style':
+                return 'STYLE';
+
+            default:
+                return 'STYLE';
+        }
+    }
 
 }

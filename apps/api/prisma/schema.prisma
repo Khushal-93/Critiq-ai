@@ -140,7 +140,7 @@ model Issue {
   category IssueCategory
 
   filePath String
-  line     Int
+  line   Int?
 
   codeSnippet  String?
   suggestedFix String?

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Issue" ALTER COLUMN "line" DROP NOT NULL;
